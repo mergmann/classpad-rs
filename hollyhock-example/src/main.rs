@@ -1,7 +1,9 @@
 #![no_std]
 #![no_main]
 
-use hollyhock::{env::vars, prelude::*};
+use hollyhock::{define_app_cargo, env::vars, prelude::*};
+
+define_app_cargo!();
 
 #[hollyhock::main]
 fn main() {

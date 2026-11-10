@@ -69,10 +69,14 @@ macro_rules! define_app {
     };
 }
 
-#[cfg(feature = "appdef-default")]
-define_app! {
-    NAME = env!("CARGO_PKG_NAME"),
-    AUTHOR = env!("CARGO_PKG_AUTHORS"),
-    VERSION = env!("CARGO_PKG_VERSION"),
-    DESCRIPTION = env!("CARGO_PKG_DESCRIPTION")
+#[macro_export]
+macro_rules! define_app_cargo {
+    () => {
+        $crate::define_app! {
+            NAME = env!("CARGO_PKG_NAME"),
+            AUTHOR = env!("CARGO_PKG_AUTHORS"),
+            VERSION = env!("CARGO_PKG_VERSION"),
+            DESCRIPTION = env!("CARGO_PKG_DESCRIPTION")
+        }
+    };
 }

@@ -15,9 +15,7 @@ embedded-io = { workspace = true, features = ["alloc"] }
 thiserror = { workspace = true, default-features = false }
 
 [features]
-default = ["appdef-default", "panic-handler"]
-
-appdef-default = []
+default = ["panic-handler"]
 
 heap-hack = []
 big-app = ["heap-hack"]
