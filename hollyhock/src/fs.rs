@@ -1,14 +1,23 @@
-use core::{error, fmt};
+use core::{
+    error,
+    ffi::{CStr, c_void},
+    fmt,
+    str::Utf8Error,
+};
 
 use alloc::{borrow::ToOwned, string::String};
-use embedded_io::ErrorKind;
+use embedded_io::{ErrorKind, ErrorType, Read, Seek, SeekFrom, Write};
 use encoding_rs::{DecoderResult, EncoderResult, SHIFT_JIS};
 use hollyhock_sys::symbols::{
     BFile_Error::{self, BFILE_EEOF, BFILE_EINVAL},
-    File_Error, File_FindInfo, File_FindInfoType,
+    FILE_SEEK_CUR, FILE_SEEK_END, FILE_SEEK_SET,
+    File_Error::{self, FILE_EEOF, FILE_EOUTOFBOUND},
+    File_FindInfo, File_FindInfoType,
 };
 
 use crate::sdk::SYMS;
+
+pub const FILE_INVALID_UTF8: i32 = -201;
 
 #[derive(Debug)]
 pub struct FugueError(pub i32);
@@ -38,6 +47,7 @@ impl FugueError {
             File_Error::FILE_ENOTEMPTY => "Directory not empty",
             File_Error::FILE_ECLUSTERSIZEMISMATCH => "Cluster size mismatch",
             File_Error::FILE_ESYSTEM => "System",
+            FILE_INVALID_UTF8 => "Invalid UTF-8",
             _ => "Unknown",
         }
     }
@@ -75,8 +85,15 @@ impl embedded_io::Error for FugueError {
             File_Error::FILE_ENOTEMPTY => ErrorKind::Other,
             File_Error::FILE_ECLUSTERSIZEMISMATCH => ErrorKind::InvalidData,
             File_Error::FILE_ESYSTEM => ErrorKind::Other,
+            FILE_INVALID_UTF8 => ErrorKind::InvalidData,
             _ => ErrorKind::Other,
         }
+    }
+}
+
+impl From<Utf8Error> for FugueError {
+    fn from(_value: Utf8Error) -> Self {
+        Self(FILE_INVALID_UTF8)
     }
 }
 
@@ -221,8 +238,8 @@ impl Drop for ReadDir {
     }
 }
 
-/// Iterate over entries in a directory
-pub fn read_dir(path: &str) -> Result<ReadDir, BFileError> {
+/// Find files matching a pattern. * as a glob is supported
+pub fn find(path: &str) -> Result<ReadDir, BFileError> {
     let mut wcstr = [0; 0x10A];
     to_wcstr(path, &mut wcstr).map_err(|_| BFileError(BFILE_EINVAL))?;
 
@@ -281,4 +298,150 @@ pub fn from_wcstr<'a>(src: &[u16], dst: &'a mut [u8]) -> Result<&'a str, ()> {
         }
     }
     str::from_utf8(&dst[..n]).map_err(|_| ())
+}
+
+pub fn mkdir(path: &CStr) -> Result<(), FugueError> {
+    check_fugue(unsafe { (SYMS.File_Mkdir)(path.as_ptr()) }).map(|_| ())
+}
+
+pub fn remove(path: &CStr) -> Result<(), FugueError> {
+    check_fugue(unsafe { (SYMS.File_Remove)(path.as_ptr()) }).map(|_| ())
+}
+
+pub fn rename(old: &CStr, new: &CStr) -> Result<(), FugueError> {
+    check_fugue(unsafe { (SYMS.File_Rename)(old.as_ptr(), new.as_ptr()) }).map(|_| ())
+}
+
+pub struct OpenOptions {
+    read: bool,
+    write: bool,
+    create: bool,
+    append: bool,
+    truncate: bool,
+}
+
+impl OpenOptions {
+    pub const fn new() -> Self {
+        Self {
+            read: false,
+            write: false,
+            create: false,
+            append: false,
+            truncate: false,
+        }
+    }
+
+    pub fn read(&mut self, read: bool) -> &mut Self {
+        self.read = read;
+        self
+    }
+
+    pub fn write(&mut self, write: bool) -> &mut Self {
+        self.write = write;
+        self
+    }
+
+    pub fn create(&mut self, create: bool) -> &mut Self {
+        self.create = create;
+        self
+    }
+
+    pub fn append(&mut self, append: bool) -> &mut Self {
+        self.append = append;
+        self
+    }
+
+    pub fn truncate(&mut self, truncate: bool) -> &mut Self {
+        self.truncate = truncate;
+        self
+    }
+
+    pub fn open(&mut self, path: &CStr) -> Result<File, FugueError> {
+        let flags = (self.read as i32)
+            | (self.write as i32) << 1
+            | (self.create as i32) << 2
+            | (self.append as i32) << 4
+            | (self.truncate as i32) << 5;
+        let handle = check_fugue(unsafe { (SYMS.File_Open)(path.as_ptr(), flags) })?;
+        Ok(File(handle))
+    }
+}
+
+pub struct File(u32);
+
+impl File {
+    pub fn open(path: &CStr) -> Result<Self, FugueError> {
+        OpenOptions::new().read(true).open(path)
+    }
+
+    pub fn create(path: &CStr) -> Result<Self, FugueError> {
+        OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(path)
+    }
+
+    pub fn options() -> OpenOptions {
+        OpenOptions::new()
+    }
+}
+
+impl ErrorType for File {
+    type Error = FugueError;
+}
+
+impl Read for File {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        let len = buf.len().min(i32::MAX as usize) as i32;
+        let result = check_fugue(unsafe {
+            (SYMS.File_Read)(self.0 as i32, buf.as_mut_ptr() as *mut c_void, len)
+        });
+        match result {
+            Ok(count) => Ok(count as usize),
+            Err(FugueError(FILE_EEOF)) => Ok(0),
+            Err(err) => Err(err),
+        }
+    }
+}
+
+impl Write for File {
+    fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        let len = buf.len().min(i32::MAX as usize) as i32;
+        let count = check_fugue(unsafe {
+            (SYMS.File_Write)(self.0 as i32, buf.as_ptr() as *const c_void, len)
+        })?;
+        Ok(count as usize)
+    }
+
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        check_fugue(unsafe { (SYMS.File_Flush)(self.0 as i32) })?;
+        Ok(())
+    }
+}
+
+impl Seek for File {
+    fn seek(&mut self, pos: SeekFrom) -> Result<u64, Self::Error> {
+        let (off, whence) = match pos {
+            SeekFrom::Start(off) => (
+                i32::try_from(off).map_err(|_| FugueError(FILE_EOUTOFBOUND))?,
+                FILE_SEEK_SET,
+            ),
+            SeekFrom::End(off) => (
+                i32::try_from(off).map_err(|_| FugueError(FILE_EOUTOFBOUND))?,
+                FILE_SEEK_END,
+            ),
+            SeekFrom::Current(off) => (
+                i32::try_from(off).map_err(|_| FugueError(FILE_EOUTOFBOUND))?,
+                FILE_SEEK_CUR,
+            ),
+        };
+        check_fugue(unsafe { (SYMS.File_Lseek)(self.0 as i32, off, whence) }).map(|pos| pos as u64)
+    }
+}
+
+impl Drop for File {
+    fn drop(&mut self) {
+        unsafe { (SYMS.File_Close)(self.0 as i32) };
+    }
 }

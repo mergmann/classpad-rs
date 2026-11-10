@@ -10,4 +10,5 @@ test = false
 bench = false
 
 [dependencies]
+embedded-io = { workspace = true, features = ["alloc"] }
 hollyhock = { workspace = true, features = ["big-app"] }

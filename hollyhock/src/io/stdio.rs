@@ -55,7 +55,7 @@ pub type Stderr = Std<2>;
 macro_rules! print {
     ($($arg:tt)*) => {{
         use $crate::io::__private::embedded_io::Write;
-        let _ = write!($crate::io::Stdout {}, $($arg)*);
+        let _ = write!($crate::io::stdio::Stdout {}, $($arg)*);
     }};
 }
 
@@ -63,7 +63,7 @@ macro_rules! print {
 macro_rules! println {
     ($($arg:tt)*) => {{
         use $crate::io::__private::embedded_io::Write;
-        let _ = writeln!($crate::io::Stdout {}, $($arg)*);
+        let _ = writeln!($crate::io::stdio::Stdout {}, $($arg)*);
     }};
 }
 
@@ -71,7 +71,7 @@ macro_rules! println {
 macro_rules! eprint {
     ($($arg:tt)*) => {{
         use $crate::io::__private::embedded_io::Write;
-        let _ = write!($crate::io::Stderr {}, $($arg)*);
+        let _ = write!($crate::io::stdio::Stderr {}, $($arg)*);
     }};
 }
 
@@ -79,11 +79,6 @@ macro_rules! eprint {
 macro_rules! eprintln {
     ($($arg:tt)*) => {{
         use $crate::io::__private::embedded_io::Write;
-        let _ = writeln!($crate::io::Stderr {}, $($arg)*);
+        let _ = writeln!($crate::io::stdio::Stderr {}, $($arg)*);
     }};
-}
-
-#[doc(hidden)]
-pub mod __private {
-    pub use embedded_io;
 }

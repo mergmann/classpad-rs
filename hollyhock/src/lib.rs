@@ -31,12 +31,12 @@ mod mem;
 pub mod rt;
 pub mod sdk;
 
-extern crate alloc;
+pub extern crate alloc;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     if state() == RtState::Running {
-        eprintln!("Panic occured: {info}");
+        eprintln!("{info}");
     }
     if state() >= RtState::Linked {
         unsafe { (SYMS.Debug_WaitKey)() };
@@ -88,6 +88,6 @@ pub fn args() -> impl ExactSizeIterator<Item = &'static str> {
 }
 
 pub mod prelude {
-    pub use crate::alloc::{boxed::Box, string::String, vec::Vec};
+    pub use crate::alloc::{boxed::Box, string::String, vec, vec::Vec};
     pub use crate::{eprint, eprintln, print, println};
 }

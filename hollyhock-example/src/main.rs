@@ -4,23 +4,18 @@
 use hollyhock::{
     define_app_cargo,
     env::vars,
-    fs::{BFileError, read_dir},
+    fs::{File, FugueError},
+    io::bufread::{BufReadExt, BufReader},
     prelude::*,
 };
 
 define_app_cargo!();
 
-fn main_read() -> Result<(), BFileError> {
-    let read = read_dir("\\fls0\\*")?;
-    for entry in read {
-        let entry = entry?;
-        let name = entry.name_to_string().unwrap_or_default();
-        println!(
-            "name={name:?} size={} file={} dir={}",
-            entry.size(),
-            entry.is_file(),
-            entry.is_dir()
-        );
+fn main_read() -> Result<(), FugueError> {
+    let mut file = BufReader::new(File::open(c"\\fls0\\example.txt")?);
+    for line in file.lines() {
+        let line = line?;
+        println!("line={line}");
     }
     Ok(())
 }
