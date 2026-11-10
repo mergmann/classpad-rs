@@ -22,29 +22,48 @@ const SAFE_GUARD_SIZE: usize = 16;
 
 const ADDR_SIZE: usize = mem::size_of::<*const c_void>();
 
-pub const FILE_OK: i32 = 0;
-pub const FILE_ENOMEM: i32 = -1;
-pub const FILE_EINVAL: i32 = -2;
-pub const FILE_EDEVFAIL: i32 = -3;
-pub const FILE_EMOUNTED: i32 = -4;
-pub const FILE_EACCES: i32 = -5;
-pub const FILE_EBADFSID: i32 = -6;
-pub const FILE_ENOVOLUME: i32 = -7;
-pub const FILE_ENOPATH: i32 = -8;
-pub const FILE_EEXIST: i32 = -9;
-pub const FILE_ENAMETOOLONG: i32 = -10;
-pub const FILE_EOUTOFBOUND: i32 = -11;
-pub const FILE_EUNFORMAT: i32 = -12;
-pub const FILE_ENOSPC: i32 = -13;
-pub const FILE_ENOENT: i32 = -14;
-pub const FILE_EISDIRECTORY: i32 = -15;
-pub const FILE_ESHARE: i32 = -16;
-pub const FILE_EMFILE: i32 = -17;
-pub const FILE_EBADF: i32 = -18;
-pub const FILE_EEOF: i32 = -19;
-pub const FILE_ENOTEMPTY: i32 = -20;
-pub const FILE_ECLUSTERSIZEMISMATCH: i32 = -40;
-pub const FILE_ESYSTEM: i32 = -99;
+#[allow(non_snake_case)]
+pub mod File_Error {
+    pub const FILE_OK: i32 = 0;
+    pub const FILE_ENOMEM: i32 = -1;
+    pub const FILE_EINVAL: i32 = -2;
+    pub const FILE_EDEVFAIL: i32 = -3;
+    pub const FILE_EMOUNTED: i32 = -4;
+    pub const FILE_EACCES: i32 = -5;
+    pub const FILE_EBADFSID: i32 = -6;
+    pub const FILE_ENOVOLUME: i32 = -7;
+    pub const FILE_ENOPATH: i32 = -8;
+    pub const FILE_EEXIST: i32 = -9;
+    pub const FILE_ENAMETOOLONG: i32 = -10;
+    pub const FILE_EOUTOFBOUND: i32 = -11;
+    pub const FILE_EUNFORMAT: i32 = -12;
+    pub const FILE_ENOSPC: i32 = -13;
+    pub const FILE_ENOENT: i32 = -14;
+    pub const FILE_EISDIRECTORY: i32 = -15;
+    pub const FILE_ESHARE: i32 = -16;
+    pub const FILE_EMFILE: i32 = -17;
+    pub const FILE_EBADF: i32 = -18;
+    pub const FILE_EEOF: i32 = -19;
+    pub const FILE_ENOTEMPTY: i32 = -20;
+    pub const FILE_ECLUSTERSIZEMISMATCH: i32 = -40;
+    pub const FILE_ESYSTEM: i32 = -99;
+}
+
+#[allow(non_snake_case)]
+pub mod BFile_Error {
+    pub const BFILE_OK: i32 = 0;
+    pub const BFILE_ENOENT: i32 = -1;
+    pub const BFILE_EINVAL: i32 = -2;
+    pub const BFILE_ENOPATH: i32 = -3;
+    pub const BFILE_ENOSPC: i32 = -4;
+    pub const BFILE_EDATA: i32 = -6;
+    pub const BFILE_ENOMEM: i32 = -7;
+    pub const BFILE_EACCESS: i32 = -8;
+    pub const BFILE_EEXIST: i32 = -13;
+    pub const BFILE_EEOF: i32 = -16;
+    pub const BFILE_ENOVOLUME: i32 = -23;
+    pub const BFILE_EDEVFAIL: i32 = -31;
+}
 
 /// Set the file offset to offset.
 pub const FILE_SEEK_SET: i32 = 0;
@@ -72,6 +91,26 @@ pub struct File_StatInfo {
     pub lastModifiedTime: u16,
     pub unknown2: u16,
     pub lastAccessedDate: u16,
+}
+
+#[repr(transparent)]
+#[allow(non_camel_case_types)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+pub struct File_FindInfoType(pub u16);
+
+impl File_FindInfoType {
+    pub const FILE: Self = Self(0x1);
+    pub const DIRECTORY: Self = Self(0x5);
+}
+
+#[repr(C, align(4))]
+#[derive(Default, Clone, Copy)]
+pub struct File_FindInfo {
+    pub struct_size: u32,
+    pub type_: File_FindInfoType,
+    pub flags: u16,
+    pub size: u32,
+    pub unknown2: [u8; 8],
 }
 
 unsafe fn strn_eq_len(a: *const u8, b: *const u8, n: usize) -> (bool, usize) {
@@ -190,8 +229,8 @@ make_symbol_table! {
     // file
     File_Close: (fn(fd: i32) -> i32);
     File_FindClose: (fn(find_handle: i32) -> i32);
-    // File_FindNext: (fn(find_handle: i32, name: *mut u16, find_info_buf: *mut File_FindInfo) -> i32);
-    // File_FindFirst: (fn(path: *const u16, find_handle: *mut i32, name: *mut u16, find_info_buf: *mut File_FindInfo) -> i32);
+    File_FindNext: (fn(find_handle: i32, name: *mut u16, find_info_buf: *mut File_FindInfo) -> i32);
+    File_FindFirst: (fn(path: *const u16, find_handle: *mut i32, name: *mut u16, find_info_buf: *mut File_FindInfo) -> i32);
     File_Fstat: (fn(fd: i32, buf: *mut File_Stat) -> i32);
     File_GetAddr: (fn(fd: i32, offset: i32, addr: *mut *const c_void) -> i32);
     File_Lseek: (fn(fd: i32, offset: i32, whence: i32) -> i32);

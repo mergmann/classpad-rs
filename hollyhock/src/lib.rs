@@ -25,6 +25,7 @@ pub mod appdef;
 mod big_app;
 pub mod env;
 pub mod err;
+pub mod fs;
 pub mod io;
 mod mem;
 pub mod rt;

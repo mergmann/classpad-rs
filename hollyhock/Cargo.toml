@@ -12,6 +12,7 @@ hollyhock-sys = { workspace = true }
 hollyhock-macros = { workspace = true }
 
 embedded-io = { workspace = true, features = ["alloc"] }
+encoding_rs = { workspace = true, default-features = false }
 thiserror = { workspace = true, default-features = false }
 
 [features]

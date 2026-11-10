@@ -13,6 +13,7 @@ hollyhock-macros = { path = "hollyhock-macros" }
 hollyhock-sys = { path = "hollyhock-sys" }
 
 embedded-io = "0.7.1"
+encoding_rs = "0.8.44"
 quote = "1.0.47"
 syn = "3.0.10"
 thiserror = "2.0.21"
