@@ -3,7 +3,7 @@ use core::{
     ffi::c_void,
 };
 
-use hollyhock_sys::symbols::{free, malloc, realloc};
+use hollyhock_sys::symbols::{free, malloc};
 
 #[global_allocator]
 static ALLOC: LibcAlloc = LibcAlloc;
@@ -41,12 +41,13 @@ unsafe impl GlobalAlloc for LibcAlloc {
 
     unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
         unsafe {
-            if layout.align() <= MALLOC_ALIGN {
-                return realloc(ptr as *mut c_void, new_size) as *mut u8;
+            if new_size <= layout.size() {
+                return ptr;
             }
-            let new = self.alloc(Layout::from_size_align_unchecked(new_size, layout.align()));
+            let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());
+            let new = self.alloc(new_layout);
             if !new.is_null() {
-                core::ptr::copy_nonoverlapping(ptr, new, layout.size().min(new_size));
+                core::ptr::copy_nonoverlapping(ptr, new, layout.size());
                 self.dealloc(ptr, layout);
             }
             new

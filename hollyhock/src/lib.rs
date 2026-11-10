@@ -20,15 +20,17 @@ use crate::{
     sdk::SYMS,
 };
 
-mod alloc;
 pub mod appdef;
 #[cfg(feature = "heap-hack")]
 mod big_app;
 pub mod env;
 pub mod err;
 pub mod io;
+mod mem;
 pub mod rt;
 pub mod sdk;
+
+extern crate alloc;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -85,5 +87,6 @@ pub fn args() -> impl ExactSizeIterator<Item = &'static str> {
 }
 
 pub mod prelude {
+    pub use crate::alloc::{boxed::Box, string::String, vec::Vec};
     pub use crate::{eprint, eprintln, print, println};
 }

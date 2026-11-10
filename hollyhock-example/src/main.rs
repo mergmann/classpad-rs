@@ -9,7 +9,13 @@ define_app_cargo!();
 fn main() {
     println!("Hello from Rust!");
 
+    let mut buffer = String::new();
     for (name, var) in vars() {
         println!("{name} = {var}");
+        buffer.push_str(name);
+        buffer.push('=');
+        buffer.push_str(var);
+        buffer.push(',');
     }
+    println!("{buffer}")
 }
