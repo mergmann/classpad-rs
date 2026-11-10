@@ -1,0 +1,27 @@
+[package]
+name = "hollyhock"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+test = false
+bench = false
+
+[dependencies]
+hollyhock-sys = { workspace = true }
+hollyhock-macros = { workspace = true }
+
+embedded-io = { workspace = true, features = ["alloc"] }
+thiserror = { workspace = true, default-features = false }
+
+[features]
+default = ["appdef-default", "panic-handler"]
+
+appdef-default = []
+
+heap-hack = []
+big-app = ["heap-hack"]
+big-app-1MB = ["heap-hack"]
+big-app-4MB = ["heap-hack"]
+
+panic-handler = []

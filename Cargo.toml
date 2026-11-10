@@ -1,0 +1,31 @@
+[workspace]
+resolver = "3"
+members = [
+    "hollyhock",
+    "hollyhock-example",
+    "hollyhock-macros",
+    "hollyhock-sys",
+]
+
+[workspace.dependencies]
+hollyhock = { path = "hollyhock" }
+hollyhock-macros = { path = "hollyhock-macros" }
+hollyhock-sys = { path = "hollyhock-sys" }
+
+embedded-io = "0.7.1"
+quote = "1.0.47"
+syn = "3.0.10"
+thiserror = "2.0.21"
+
+[profile.dev]
+panic = "abort"
+opt-level = "s"
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+debug = true
+
+[profile.hh3]
+inherits = "release"
+strip = true
