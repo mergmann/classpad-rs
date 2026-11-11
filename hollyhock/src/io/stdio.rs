@@ -1,11 +1,17 @@
-use core::ffi::c_int;
+use core::{error, ffi::c_int, fmt};
 
 use embedded_io::{ErrorKind, ErrorType, Read, Write};
 use hollyhock_sys::symbols::{fflush, read, write};
 
-#[derive(thiserror::Error, Debug)]
-#[error("stdio error")]
+#[derive(Debug)]
 pub struct StdioError;
+
+impl error::Error for StdioError {}
+impl fmt::Display for StdioError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "stdio error")
+    }
+}
 
 impl embedded_io::Error for StdioError {
     fn kind(&self) -> ErrorKind {
