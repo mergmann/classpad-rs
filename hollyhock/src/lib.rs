@@ -6,19 +6,11 @@
 
 use core::{
     ffi::{CStr, c_char, c_int},
-    panic::PanicInfo,
     ptr,
     sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
 };
 
 pub use hollyhock_macros::main;
-use hollyhock_sys::symbols::exit;
-
-use crate::{
-    err::RT_PANIC,
-    rt::{RtState, state},
-    sdk::SYMS,
-};
 
 pub mod appdef;
 #[cfg(feature = "heap-hack")]
@@ -35,15 +27,29 @@ pub mod sdk;
 
 pub extern crate alloc;
 
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    if state() == RtState::Running {
-        eprintln!("{info}");
+#[cfg(feature = "panic-handler")]
+mod panic {
+    use core::panic::PanicInfo;
+
+    use hollyhock_sys::symbols::exit;
+
+    use crate::{
+        eprintln,
+        err::RT_PANIC,
+        rt::{RtState, state},
+        sdk::SYMS,
+    };
+
+    #[panic_handler]
+    fn panic(info: &PanicInfo) -> ! {
+        if state() == RtState::Running {
+            eprintln!("{info}");
+        }
+        if state() >= RtState::Linked {
+            unsafe { (SYMS.Debug_WaitKey)() };
+        }
+        unsafe { exit(RT_PANIC) }
     }
-    if state() >= RtState::Linked {
-        unsafe { (SYMS.Debug_WaitKey)() };
-    }
-    unsafe { exit(RT_PANIC) }
 }
 
 static ARGS: Args = Args::new();
