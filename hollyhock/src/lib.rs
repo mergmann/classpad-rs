@@ -23,6 +23,8 @@ use crate::{
 pub mod appdef;
 #[cfg(feature = "heap-hack")]
 mod big_app;
+pub mod debug;
+pub mod draw;
 pub mod env;
 pub mod err;
 pub mod fs;

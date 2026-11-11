@@ -12,6 +12,7 @@ hollyhock-sys = { workspace = true }
 hollyhock-macros = { workspace = true }
 
 embedded-io = { workspace = true, features = ["alloc"] }
+embedded-graphics-core = { workspace = true }
 encoding_rs = { workspace = true, default-features = false }
 memchr = { workspace = true, default-features = false }
 thiserror = { workspace = true, default-features = false }

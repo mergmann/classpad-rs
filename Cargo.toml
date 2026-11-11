@@ -12,12 +12,15 @@ hollyhock = { path = "hollyhock" }
 hollyhock-macros = { path = "hollyhock-macros" }
 hollyhock-sys = { path = "hollyhock-sys" }
 
+embedded-graphics = "0.8.2"
+embedded-graphics-core = "0.4.1"
 embedded-io = "0.7.1"
 encoding_rs = "0.8.44"
 memchr = "2.8.3"
 quote = "1.0.47"
 syn = "3.0.10"
 thiserror = "2.0.21"
+tock-registers = "0.12.0"
 
 [profile.dev]
 panic = "abort"

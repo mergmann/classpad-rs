@@ -10,5 +10,6 @@ test = false
 bench = false
 
 [dependencies]
+embedded-graphics = { workspace = true }
 embedded-io = { workspace = true, features = ["alloc"] }
 hollyhock = { workspace = true, features = ["big-app"] }
